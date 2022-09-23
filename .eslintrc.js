@@ -11,5 +11,6 @@ module.exports = {
         ignores: ['index', '401', '404'],
       },
     ],
+    endOfLine: 'auto',
   },
 }
