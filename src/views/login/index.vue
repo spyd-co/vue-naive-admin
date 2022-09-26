@@ -51,6 +51,7 @@ import { useStorage } from '@vueuse/core'
 import bgImg from '@/assets/images/login_bg.webp'
 import api from './api'
 import { addDynamicRoutes } from '@/router'
+import { rey } from '../../api/spyd/rey'
 
 const title = import.meta.env.VITE_TITLE
 
@@ -80,29 +81,40 @@ async function handleLogin() {
     $message.warning('请输入用户名和密码')
     return
   }
-  try {
-    loading.value = true
-    $message.loading('正在验证...')
-    const res = await api.login({ name, password: password.toString() })
-    $message.success('登录成功')
-    setToken(res.data.token)
-    if (isRemember.value) {
-      lStorage.set('loginInfo', { name, password })
-    } else {
-      lStorage.remove('loginInfo')
+
+  // loading.value = true
+  // $message.loading('正在验证...')
+  // const res = await api.login({ name, password: password.toString() })
+  // $message.success('登录成功')
+  // setToken(res.data.token)
+  // if (isRemember.value) {
+  //   lStorage.set('loginInfo', { name, password })
+  // } else {
+  //   lStorage.remove('loginInfo')
+  // }
+
+  $message.loading('正在验证...')
+  rey.logIn(
+    name,
+    password,
+    async (data) => {
+      $message.success('登录成功')
+      setToken(data.Token)
+      await addDynamicRoutes()
+      if (query.redirect) {
+        const path = query.redirect
+        Reflect.deleteProperty(query, 'redirect')
+        router.push({ path, query })
+      } else {
+        router.push('/')
+      }
+    },
+    (error) => {
+      $message.error(error)
+      $message.removeMessage()
     }
-    await addDynamicRoutes()
-    if (query.redirect) {
-      const path = query.redirect
-      Reflect.deleteProperty(query, 'redirect')
-      router.push({ path, query })
-    } else {
-      router.push('/')
-    }
-  } catch (error) {
-    console.error(error)
-    $message.removeMessage()
-  }
+  )
+
   loading.value = false
 }
 </script>

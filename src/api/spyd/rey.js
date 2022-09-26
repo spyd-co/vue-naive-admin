@@ -48,6 +48,24 @@ async function getToken() {
   return ''
 }
 
+async function tryRefreshToken() {
+  ensureAddress()
+  if (await isLoggedIn()) {
+    let t = await getToken()
+    if (t) {
+      spydApi.post('v1/user/refresh', 'post', {}, async (data) => {
+        await spydLocalData.set(_localDataEntry, {
+          user: data.UserName,
+          token: data.Token,
+        })
+
+        console.log('refresh token: ok')
+        return
+      })
+    }
+  }
+}
+
 async function callApi(api, action, params, errorHandler) {
   ensureAddress()
   let t = await getToken()
@@ -64,8 +82,8 @@ function setLogOutFunc(f) {
 function getApi() {
   async function logOut_() {
     ensureAddress()
-    if (isLoggedIn()) {
-      let t = getToken()
+    if (await isLoggedIn()) {
+      let t = await getToken()
       if (t) {
         spydApi.post('v1/user/logout', 'post', {}, (data) => {
           spydLocalData.remove(_localDataEntry)
