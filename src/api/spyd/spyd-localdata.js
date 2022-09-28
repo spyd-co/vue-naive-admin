@@ -15,7 +15,7 @@ function getSpydLocalData() {
 
   return {
     set: async function (k, v) {
-      localforage.setItem(k, spydTool.Base64.encode(JSON.stringify(v)))
+      await localforage.setItem(k, spydTool.Base64.encode(JSON.stringify(v)))
     },
     setStr: async function (k, v, encodeBase64) {
       let v_ = v
@@ -23,7 +23,7 @@ function getSpydLocalData() {
         v_ = spydTool.Base64.encode(v)
       }
 
-      localforage.setItem(k, v_)
+      await localforage.setItem(k, v_)
     },
     get: async function (k) {
       let v = await localforage.getItem(k)

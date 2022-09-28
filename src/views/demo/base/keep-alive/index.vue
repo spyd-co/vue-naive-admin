@@ -4,6 +4,10 @@
       <n-input v-model:value="inputVal" />
       <n-input-number v-model:value="number" mt-30 />
       <p mt-20 text-center color-gray text-14>注：右击标签重新加载可重置keep-alive</p>
+      <iframe
+        style="width: 100%; height: 400px; border: none"
+        src="https://localforage.docschina.org/#api-removeitem"
+      />
     </div>
   </CommonPage>
 </template>
