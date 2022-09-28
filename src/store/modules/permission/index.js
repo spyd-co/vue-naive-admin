@@ -2,6 +2,8 @@ import { defineStore } from 'pinia'
 import { asyncRoutes, basicRoutes } from '@/router/routes'
 
 function hasPermission(route, role) {
+  return true
+
   // * 不需要权限直接返回true
   if (!route.meta?.requireAuth) return true
 
