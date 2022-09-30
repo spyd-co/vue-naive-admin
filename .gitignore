@@ -3,3 +3,4 @@ dist
 *.local
 stats.html
 .vs
+yarn.lock
