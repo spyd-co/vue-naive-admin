@@ -37,5 +37,15 @@ export default {
         keepAlive: true,
       },
     },
+    {
+      name:'Notebook',
+      path:"notebook",
+      component: () => import('./notebook/index.vue'),
+      meta: {
+        title: '笔记本',
+        icon: 'mdi:note',        
+        keepAlive: true,
+      },
+    },
   ],
 }

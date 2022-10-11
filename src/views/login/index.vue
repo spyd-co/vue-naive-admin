@@ -52,7 +52,7 @@ import bgImg from '@/assets/images/login_bg.webp'
 import api from './api'
 import { addDynamicRoutes } from '@/router'
 import { rey } from '../../api/spyd/rey'
-import { spydSvc } from '../../api/spyd/spyd-svc'
+import { spydSvc } from '@/api/spyd/spyd-svc'
 
 const title = import.meta.env.VITE_TITLE
 
@@ -120,8 +120,8 @@ async function handleLogin() {
     name,
     password,
     async (token) => {
-      const appList = await spydSvc.getUserAppList()
-      console.table(appList)
+      // const appList = await spydSvc.getUserAppList()
+      // console.table(appList)
 
       $message.success('登录成功')
       setToken(token)
