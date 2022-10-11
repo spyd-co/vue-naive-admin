@@ -38,12 +38,12 @@ export default {
       },
     },
     {
-      name:'Notebook',
-      path:"notebook",
+      name: 'Notebook',
+      path: 'notebook',
       component: () => import('./notebook/index.vue'),
       meta: {
         title: '笔记本',
-        icon: 'mdi:note',        
+        icon: 'mdi:note',
         keepAlive: true,
       },
     },
