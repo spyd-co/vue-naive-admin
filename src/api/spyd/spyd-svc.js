@@ -40,7 +40,7 @@ function getSvc() {
     }
   }
 
-  async function postAsForm_(target, o) {
+  async function postAsForm(target, o) {
     let r = await fetch(target, {
       method: 'POST',
       headers: {
@@ -52,7 +52,7 @@ function getSvc() {
     return r
   }
 
-  async function postAsForm(target, action, context, signReq) {
+  async function postReq(target, action, context, signReq) {
     if (spydTool.isEmpty(target)) throw new Error('parameter missing: target')
     if (spydTool.isEmpty(action)) throw new Error('parameter missing: action')
 
@@ -68,14 +68,14 @@ function getSvc() {
 
     let url = 'https://hezup.com' + `/${target}/api?action=${target}/${action}`
 
-    let r = await (await postAsForm_(url, requestBody)).json()
+    let r = await (await postAsForm(url, requestBody)).json()
 
     return r.data
   }
 
   return {
     auth: async function (uid, pass, success, fail) {
-      let r = await postAsForm('user', 'log_in', {
+      let r = await postReq('user', 'log_in', {
         username: uid,
         password: pass,
       })
@@ -98,7 +98,7 @@ function getSvc() {
         signReq = false
       }
 
-      let r = await postAsForm(target, action, context, signReq)
+      let r = await postReq(target, action, context, signReq)
       if (r.success) {
         return r.data
       } else if (r.errorcode === '5') {
@@ -121,7 +121,7 @@ function getSvc() {
       }
     },
     getUserAppList: async function () {
-      return await postAsForm('user', 'get_app_list', undefined, true)
+      return await postReq('user', 'get_app_list', undefined, true)
     },
     isUsingAppKey: async function () {
       return isUsingAppKey()
