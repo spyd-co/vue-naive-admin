@@ -1,6 +1,19 @@
 <template>
   <CommonPage show-footer>
     <n-space size="large">
+      <n-input v-model:value="inputVal" />
+      <n-input-number v-model:value="number" mt-30 />
+
+      <div>
+        <n-button type="primary" @click="addToList">
+          <TheIcon icon="majesticons:plus" :size="18" class="mr-5" /> 添加
+        </n-button>
+        <span v-for="app of appList" :key="app" style="margin: 3px">
+          {{ app }}
+        </span>
+      </div>
+    </n-space>
+    <n-space size="large">
       <n-card title="按钮 Button">
         <n-space>
           <n-button>Default</n-button>
@@ -53,10 +66,37 @@
 
 <script setup>
 import { spydSvc } from '@/api/spyd/spyd-svc'
+spydSvc.config({ server: 'https://localhost:16666/' })
+defineOptions({ name: 'KeepAlive' })
 
-onMounted(async () => {
-  const appList = await spydSvc.getUserAppList()
-  console.table(appList)
+const appList = ref([])
+const inputVal = ref('')
+const number = ref(0)
+
+// onMounted(async () => {
+//   if (appList.value.length === 0) appList.value = await spydSvc.getUserAppList()
+//   console.table(appList.value)
+// })
+
+onMounted(() => {
+  $message.success('onMounted')
+})
+
+onUnmounted(() => {
+  $message.error('onUnmounted')
+})
+
+onActivated(async () => {
+  $message.info('onActivated')
+
+  if (appList.value.length === 0) {
+    const lst = await spydSvc.getUserAppList()
+    lst.forEach((i) => appList.value.push(i.name))
+  }
+  console.table(appList.value)
+})
+onDeactivated(() => {
+  $message.warning('onDeactivated')
 })
 
 const handleDelete = function () {
@@ -72,6 +112,11 @@ const handleDelete = function () {
 }
 
 const loading = ref(false)
+
+function addToList() {
+  appList.value.push('ss')
+}
+
 function handleLogin() {
   loading.value = true
   $message.loading('登陆中...')
