@@ -3,16 +3,26 @@
 import { spydTool } from './spyd-tool'
 import { spydLocalData } from './spyd-localdata'
 
-async function isUsingAppKey() {
-  let userData = await spydLocalData.get('spyd.svc.user')
-  return appKeyExists(userData)
-}
-
-function appKeyExists(userData) {
-  return userData.user && userData.appkey && userData.appsecret
-}
-
 function getSvc() {
+  const _cfg = {
+    server: '',
+    logOut: undefined,
+  }
+
+  const _logOut = async () => {
+    await spydLocalData.remove('spyd.svc.user')
+    if (_cfg.logOut) _cfg.logOut()
+  }
+
+  async function isUsingAppKey() {
+    let userData = await spydLocalData.get('spyd.svc.user')
+    return appKeyExists(userData)
+  }
+
+  function appKeyExists(userData) {
+    return userData.user && userData.appkey && userData.appsecret
+  }
+
   async function signRequest(req) {
     let userData = await spydLocalData.get('spyd.svc.user')
     try {
@@ -66,19 +76,51 @@ function getSvc() {
       await signRequest(requestBody)
     }
 
-    let url = 'https://hezup.com' + `/${target}/api?action=${target}/${action}`
+    let url = _cfg.server
+    if (!url.endsWith('/')) url += '/'
+    url += `${target}/api?action=${target}/${action}`
 
-    let r = await (await postAsForm(url, requestBody)).json()
+    let resp = await postAsForm(url, requestBody)
+    console.log(resp)
 
-    return r.data
+    if (resp.status !== 200) {
+      //throw new Error(resp.status + ' - ' + resp.statusText)
+      return {
+        success: 0,
+        error: resp.status,
+        message: '连接失败',
+      }
+    }
+
+    let r = await resp.json()
+
+    return r
   }
 
   return {
+    config: function (cfg) {
+      if (cfg) {
+        if (cfg.server) _cfg.server = cfg.server
+        if (cfg.logOut) _cfg.logOut = cfg.logOut
+      } else {
+        return { server: _cfg.server }
+      }
+    },
     auth: async function (uid, pass, success, fail) {
-      let r = await postReq('user', 'log_in', {
-        username: uid,
-        password: pass,
-      })
+      let r = await this.req(
+        'user',
+        'log_in',
+        {
+          username: uid,
+          password: pass,
+        },
+        {
+          signRequest: false,
+          errorHandler: (msg, err) => {
+            console.log('error:' + msg + ' ( ' + err + ' )')
+          },
+        }
+      )
       if (r.ok && r.token) {
         await spydLocalData.set('spyd.svc.user', {
           user: uid,
@@ -86,6 +128,7 @@ function getSvc() {
         })
 
         if (success) success(r.token)
+        return true
       } else {
         if (fail) fail({ message: '登录失败', error: r.error })
         console.error('登录失败: ' + r.error)
@@ -98,15 +141,14 @@ function getSvc() {
         signReq = false
       }
 
-      let r = await postReq(target, action, context, signReq)
+      const r = await postReq(target, action, context, signReq)
+
       if (r.success) {
         return r.data
       } else if (r.errorcode === '5') {
-        if (config.logout) {
-          config.logout()
-          return
-        }
         console.error('token expired')
+        await _logOut()
+        return
       } else if (config && config.errorHandler) {
         if (config.errorHandler) {
           config.errorHandler(r.message, r.error)
@@ -117,8 +159,13 @@ function getSvc() {
           return r.data
         }
       } else {
-        throw new Error(r.message)
+        throw {
+          error: r.error,
+          message: r.message,
+        }
       }
+
+      return r.data
     },
     getUserAppList: async function () {
       return await postReq('user', 'get_app_list', undefined, true)
