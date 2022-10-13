@@ -49,7 +49,6 @@
 import { lStorage, setToken } from '@/utils'
 import { useStorage } from '@vueuse/core'
 import bgImg from '@/assets/images/login_bg.webp'
-import api from './api'
 import { addDynamicRoutes } from '@/router'
 import { rey } from '../../api/spyd/rey'
 import { spydSvc } from '@/api/spyd/spyd-svc'
@@ -116,6 +115,7 @@ async function handleLogin() {
   //   }
   // )
 
+  spydSvc.config({ server: 'https://hezup.com/' })
   await spydSvc.auth(
     name,
     password,
