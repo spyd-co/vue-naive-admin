@@ -4,19 +4,22 @@ import { spydTool } from './spyd-tool'
 import { spydApi } from './spyd-api'
 import { spydLocalData } from './spyd-localdata'
 
-let _localDataEntry = 'rey.userdata'
-let _address = ''
-let _logOutFunc = undefined
+const _cfg = {
+  server: '',
+  logOut: undefined,
+  tokenLocation: 'rey.user',
+}
 
 function ensureAddress() {
-  if (spydTool.isEmpty(_address)) {
+  if (spydTool.isEmpty(_cfg.server)) {
     throw new Error('address not set')
   }
 }
 
 async function isUsingAppKey() {
-  let userData = await spydLocalData.getObj(_localDataEntry)
-  return userData.user && userData.appkey && userData.appsecret
+  let userData = await spydLocalData.getObj(_cfg.tokenLocation)
+  if (userData) return userData.user && userData.appkey && userData.appsecret
+  return false
 }
 
 //检查凭据是否过期，注意：没有凭据或者凭据不完整都视为凭据过期
@@ -34,14 +37,14 @@ async function isLoggedIn() {
   if (await isUsingAppKey()) return true
 
   //如果有登录凭据，则检查凭据是否失效
-  let userData = await spydLocalData.getObj(_localDataEntry)
+  let userData = await spydLocalData.getObj(_cfg.tokenLocation)
   if (!isTokenExpired(userData)) return true
 
   return false
 }
 
 async function getToken() {
-  let userData = await spydLocalData.getObj(_localDataEntry)
+  let userData = await spydLocalData.getObj(_cfg.tokenLocation)
   if (userData.token) {
     return userData.token
   }
@@ -50,18 +53,20 @@ async function getToken() {
 
 async function tryRefreshToken() {
   ensureAddress()
+  //todo: 检查token的时间戳，如果离到期时间为x，则请求新的token
   if (await isLoggedIn()) {
     let t = await getToken()
     if (t) {
-      spydApi.post('v1/user/refresh', 'post', {}, async (data) => {
-        await spydLocalData.set(_localDataEntry, {
-          user: data.UserName,
-          token: data.Token,
-        })
+      return
+      // spydApi.post('v1/user/refresh', 'post', {}, async (data) => {
+      //   await spydLocalData.set(_cfg.tokenLocation, {
+      //     user: data.UserName,
+      //     token: data.Token,
+      //   })
 
-        console.log('refresh token: ok')
-        return
-      })
+      //   console.log('refresh token: ok')
+      //   return
+      // })
     }
   }
 }
@@ -70,13 +75,10 @@ async function callApi(api, action, params, errorHandler) {
   ensureAddress()
   let t = await getToken()
   if (t) {
+    tryRefreshToken()
     spydApi.token(t)
   }
   return await spydApi.fetch(api, action, params, errorHandler)
-}
-
-function setLogOutFunc(f) {
-  _logOutFunc = f
 }
 
 function getApi() {
@@ -85,36 +87,43 @@ function getApi() {
     if (await isLoggedIn()) {
       let t = await getToken()
       if (t) {
-        spydApi.post('v1/user/logout', 'post', {}, (data) => {
-          spydLocalData.remove(_localDataEntry)
+        spydApi.post('v1/user/logout', 'post', {}, () => {
+          spydLocalData.remove(_cfg.tokenLocation)
           console.log('logged out')
           return
         })
       }
     }
 
-    await spydLocalData.remove(_localDataEntry)
+    await spydLocalData.remove(_cfg.tokenLocation)
     console.log('logged out')
 
-    if (_logOutFunc) _logOutFunc()
+    if (_cfg.logOut) _cfg.logOut()
   }
 
   return {
-    address: function (v) {
-      spydApi.address(v)
-      if (v) {
-        _address = v
+    config: function (cfg) {
+      if (cfg) {
+        if (cfg.server) {
+          _cfg.server = cfg.server
+          spydApi.address(_cfg.server)
+        }
+        if (cfg.logOut) _cfg.logOut = cfg.logOut
+        if (cfg.tokenLocation) _cfg.tokenLocation = cfg.tokenLocation
       } else {
-        return _address
+        return {
+          server: _cfg.server,
+          tokenLocation: _cfg.tokenLocation,
+        }
       }
     },
-    logIn: function (uid, pass, dataHandler, errorHandler) {
+    auth: function (uid, pass, dataHandler, errorHandler) {
       ensureAddress()
       spydApi.auth(
         uid,
         pass,
         async (data) => {
-          await spydLocalData.set(_localDataEntry, {
+          await spydLocalData.set(_cfg.tokenLocation, {
             user: data.UserName,
             token: data.Token,
           })
@@ -149,12 +158,8 @@ function getApi() {
       return orgId
     },
     logOut: async function () {
-      spydLocalData.remove(_localDataEntry)
       console.log('logged out')
       await logOut_()
-    },
-    setLogOut: function (f) {
-      setLogOutFunc(f)
     },
     isUsingAppKey: function () {
       return isUsingAppKey()
@@ -163,7 +168,7 @@ function getApi() {
       return isLoggedIn()
     },
     getUserName: async function () {
-      let userData = spydLocalData.getObj(_localDataEntry)
+      let userData = spydLocalData.getObj(_cfg.tokenLocation)
       if (userData.user) {
         return userData.user
       } else {
@@ -181,7 +186,7 @@ function getApi() {
     },
     setCurrOrg: async function (id, errorHandler) {
       try {
-        let r = await callApi('v1/user/organization/id', 'post', { org_id: id }, errorHandler)
+        await callApi('v1/user/organization/id', 'post', { org_id: id }, errorHandler)
         return true
       } catch (e) {
         console.error(JSON.stringify(e))

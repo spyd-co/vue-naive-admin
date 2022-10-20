@@ -207,18 +207,22 @@ function getSpydApi() {
         body: JSON.stringify(req),
       })
 
-      const resp = await rawResp.json()
+      try {
+        const resp = await rawResp.json()
 
-      resp.api = `${api},${action}`
+        resp.api = `${api},${action}`
 
-      if (!detectError(resp, errorHandler)) {
-        return {
-          time: new Date(resp.timestamp),
-          data: resp.data,
-          message: resp.message,
+        if (!detectError(resp, errorHandler)) {
+          return {
+            time: new Date(resp.timestamp),
+            data: resp.data,
+            message: resp.message,
+          }
+        } else {
+          console.log('[ERROR] ' + `${api},${action}`)
         }
-      } else {
-        console.log('[ERROR] ' + `${api},${action}`)
+      } catch (e) {
+        throw 'response data is not valid JSON format'
       }
     },
   }

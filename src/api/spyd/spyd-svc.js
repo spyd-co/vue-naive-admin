@@ -17,11 +17,13 @@ function getSvc() {
 
   async function isUsingAppKey() {
     let userData = await spydLocalData.get(_cfg.tokenLocation)
-    return appKeyExists(userData)
+    if (userData) return appKeyExists(userData)
+    return false
   }
 
   function appKeyExists(userData) {
-    return userData.user && userData.appkey && userData.appsecret
+    if (userData) return userData.user && userData.appkey && userData.appsecret
+    return false
   }
 
   async function signRequest(req) {
@@ -82,7 +84,7 @@ function getSvc() {
     url += `${target}/api?action=${target}/${action}`
 
     let resp = await postAsForm(url, requestBody)
-    console.log(resp)
+    //console.log(resp)
 
     if (resp.status !== 200) {
       //throw new Error(resp.status + ' - ' + resp.statusText)

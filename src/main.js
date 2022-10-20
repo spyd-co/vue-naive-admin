@@ -7,7 +7,7 @@ import 'virtual:svg-icons-register'
 import { createApp } from 'vue'
 import { setupRouter } from '@/router'
 import { setupStore } from '@/store'
-import { rey } from './api/spyd/rey'
+import { rey } from '@/api/spyd/rey'
 
 import App from './App.vue'
 
@@ -20,8 +20,8 @@ async function setupApp() {
 
   app.mount('#app')
 
-  rey.address('http://localhost:16666/rey')
-  // rey.logIn(
+  rey.config({ server: 'http://localhost:16666/rey' })
+  // rey.auth(
   //   'admin',
   //   'badrobodo',
   //   async (data) => {
