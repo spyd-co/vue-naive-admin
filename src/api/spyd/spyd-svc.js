@@ -7,15 +7,16 @@ function getSvc() {
   const _cfg = {
     server: '',
     logOut: undefined,
+    tokenLocation: 'spyd.svc.user',
   }
 
   const _logOut = async () => {
-    await spydLocalData.remove('spyd.svc.user')
+    await spydLocalData.remove(_cfg.tokenLocation)
     if (_cfg.logOut) _cfg.logOut()
   }
 
   async function isUsingAppKey() {
-    let userData = await spydLocalData.get('spyd.svc.user')
+    let userData = await spydLocalData.get(_cfg.tokenLocation)
     return appKeyExists(userData)
   }
 
@@ -24,7 +25,7 @@ function getSvc() {
   }
 
   async function signRequest(req) {
-    let userData = await spydLocalData.get('spyd.svc.user')
+    let userData = await spydLocalData.get(_cfg.tokenLocation)
     try {
       if (appKeyExists(userData)) {
         var req_ = { action: req.action }
@@ -102,8 +103,12 @@ function getSvc() {
       if (cfg) {
         if (cfg.server) _cfg.server = cfg.server
         if (cfg.logOut) _cfg.logOut = cfg.logOut
+        if (cfg.tokenLocation) _cfg.tokenLocation = cfg.tokenLocation
       } else {
-        return { server: _cfg.server }
+        return {
+          server: _cfg.server,
+          tokenLocation: _cfg.tokenLocation,
+        }
       }
     },
     auth: async function (uid, pass, success, fail) {
@@ -122,7 +127,7 @@ function getSvc() {
         }
       )
       if (r.ok && r.token) {
-        await spydLocalData.set('spyd.svc.user', {
+        await spydLocalData.set(_cfg.tokenLocation, {
           user: uid,
           token: r.token,
         })
@@ -146,9 +151,13 @@ function getSvc() {
       if (r.success) {
         return r.data
       } else if (r.errorcode === '5') {
-        console.error('token expired')
+        console.error('unauthorized')
         await _logOut()
-        return
+        //return
+        throw {
+          error: 'unauthorized',
+          message: r.message,
+        }
       } else if (config && config.errorHandler) {
         if (config.errorHandler) {
           config.errorHandler(r.message, r.error)
