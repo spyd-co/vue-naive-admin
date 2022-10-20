@@ -117,9 +117,9 @@ function getApi() {
         }
       }
     },
-    auth: function (uid, pass, dataHandler, errorHandler) {
+    auth: async function (uid, pass, dataHandler, errorHandler) {
       ensureAddress()
-      spydApi.auth(
+      await spydApi.auth(
         uid,
         pass,
         async (data) => {
