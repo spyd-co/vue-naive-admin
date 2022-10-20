@@ -4,3 +4,5 @@ dist
 stats.html
 .vs
 yarn.lock
+.vs/slnx.sqlite
+.vs/vue-naive-admin/v17/.suo
