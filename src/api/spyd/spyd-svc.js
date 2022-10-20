@@ -89,7 +89,7 @@ function getSvc() {
       return {
         success: 0,
         error: resp.status,
-        message: '连接失败',
+        message: '请求失败',
       }
     }
 
